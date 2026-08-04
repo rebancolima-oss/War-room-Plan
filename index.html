@@ -2479,6 +2479,17 @@
         let notificacoes = [];
 
         // ============================================================
+        // FUNÇÕES DE PERMISSÃO
+        // ============================================================
+        function isSuperAdmin() {
+            return currentUser && currentUser.email === 'admin@rocc.com' && currentUser.role === 'admin';
+        }
+
+        function isAdmin() {
+            return currentUser && currentUser.role === 'admin';
+        }
+
+        // ============================================================
         // PLANOS
         // ============================================================
         const PLANOS = {
@@ -3631,7 +3642,7 @@
         }
 
         // ============================================================
-        // FUNÇÕES DE USUÁRIOS (EXPANDIR, ADICIONAR, REMOVER, RESET)
+        // FUNÇÕES DE USUÁRIOS (EXPANDIR, ADICIONAR, REMOVER, RESET) - CORRIGIDAS
         // ============================================================
         function toggleEmpresaUsuarios(empresaId) {
             const tr = document.querySelector(`.usuarios-${empresaId}`);
@@ -3649,101 +3660,151 @@
         }
 
         async function adicionarUsuarioEmpresa(empresaId) {
-            const nome = prompt('Nome do usuário:');
-            if (!nome) return;
-            const email = prompt('E-mail do usuário:');
-            if (!email) return;
-            
-            const role = prompt('Role (admin/gerente/tecnico/visualizador):', 'tecnico');
-            if (!role) return;
-            
-            const rolesValidas = ['admin', 'gerente', 'tecnico', 'visualizador', 'monitoramento'];
-            if (!rolesValidas.includes(role)) {
-                showNotification('❌ Role inválida! Use: admin, gerente, tecnico, visualizador, monitoramento');
-                return;
-            }
-            
-            await autenticarSupabase();
-            
-            const { data, error } = await supabaseClient
-                .from('usuarios')
-                .insert({
-                    empresa_id: empresaId,
-                    nome: nome,
-                    email: email,
-                    senha: 'nova123',
-                    role: role,
-                    ativo: true
-                })
-                .select()
-                .single();
-            
-            if (error) {
+            try {
+                if (!isAdmin()) {
+                    showNotification('❌ Apenas administradores podem adicionar usuários!');
+                    return;
+                }
+                
+                const nome = prompt('Nome do usuário:');
+                if (!nome) return;
+                
+                const email = prompt('E-mail do usuário:');
+                if (!email) return;
+                
+                const role = prompt('Role (admin/gerente/tecnico/visualizador):', 'tecnico');
+                if (!role) return;
+                
+                const rolesValidas = ['admin', 'gerente', 'tecnico', 'visualizador', 'monitoramento'];
+                if (!rolesValidas.includes(role)) {
+                    showNotification('❌ Role inválida! Use: admin, gerente, tecnico, visualizador, monitoramento');
+                    return;
+                }
+                
+                await autenticarSupabase();
+                
+                const { data, error } = await supabaseClient
+                    .from('usuarios')
+                    .insert({
+                        empresa_id: empresaId,
+                        nome: nome,
+                        email: email,
+                        senha: 'nova123',
+                        role: role,
+                        ativo: true
+                    })
+                    .select()
+                    .single();
+                
+                if (error) {
+                    showNotification('❌ Erro ao adicionar usuário: ' + error.message);
+                    return;
+                }
+                
+                showNotification(`✅ Usuário ${nome} adicionado! Senha: nova123`);
+                await carregarEmpresas();
+                USERS.push(data);
+                
+            } catch (error) {
+                console.error('❌ Erro ao adicionar usuário:', error);
                 showNotification('❌ Erro ao adicionar usuário: ' + error.message);
-                return;
             }
-            
-            showNotification(`✅ Usuário ${nome} adicionado! Senha: nova123`);
-            carregarEmpresas();
         }
 
         async function resetarSenhaUsuario(userId) {
-            const user = USERS.find(u => u.id === userId);
-            if (!user) {
-                showNotification('❌ Usuário não encontrado');
-                return;
-            }
-            
-            const novaSenha = prompt(`Nova senha para ${user.nome}:`, 'nova123');
-            if (!novaSenha || novaSenha.length < 4) {
-                showNotification('❌ Senha deve ter pelo menos 4 caracteres');
-                return;
-            }
-            
-            await autenticarSupabase();
-            
-            const { error } = await supabaseClient
-                .from('usuarios')
-                .update({ senha: novaSenha })
-                .eq('id', userId);
-            
-            if (error) {
+            try {
+                const { data: user, error: userError } = await supabaseClient
+                    .from('usuarios')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (userError || !user) {
+                    showNotification('❌ Usuário não encontrado');
+                    return;
+                }
+                
+                if (!isAdmin()) {
+                    showNotification('❌ Apenas administradores podem resetar senhas!');
+                    return;
+                }
+                
+                const novaSenha = prompt(`Nova senha para ${user.nome}:`, 'nova123');
+                if (!novaSenha || novaSenha.length < 4) {
+                    showNotification('❌ Senha deve ter pelo menos 4 caracteres');
+                    return;
+                }
+                
+                await autenticarSupabase();
+                
+                const { error } = await supabaseClient
+                    .from('usuarios')
+                    .update({ senha: novaSenha })
+                    .eq('id', userId);
+                
+                if (error) {
+                    showNotification('❌ Erro ao resetar senha: ' + error.message);
+                    return;
+                }
+                
+                showNotification(`✅ Senha de ${user.nome} resetada para: ${novaSenha}`);
+                
+                const localUser = USERS.find(u => u.id === userId);
+                if (localUser) localUser.senha = novaSenha;
+                
+                await carregarEmpresas();
+                
+            } catch (error) {
+                console.error('❌ Erro ao resetar senha:', error);
                 showNotification('❌ Erro ao resetar senha: ' + error.message);
-                return;
             }
-            
-            showNotification(`✅ Senha de ${user.nome} resetada para: ${novaSenha}`);
-            carregarEmpresas();
         }
 
         async function removerUsuario(userId) {
-            const user = USERS.find(u => u.id === userId);
-            if (!user) {
-                showNotification('❌ Usuário não encontrado');
-                return;
-            }
-            
-            if (user.email === 'admin@rocc.com') {
-                showNotification('❌ Não pode remover o SUPER ADMIN!');
-                return;
-            }
-            
-            if (!confirm(`Remover usuário "${user.nome}" (${user.email})?`)) return;
-            
-            await autenticarSupabase();
-            
-            const { error } = await supabaseClient
-                .from('usuarios')
-                .delete()
-                .eq('id', userId);
-            
-            if (error) {
+            try {
+                const { data: user, error: userError } = await supabaseClient
+                    .from('usuarios')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (userError || !user) {
+                    showNotification('❌ Usuário não encontrado');
+                    return;
+                }
+                
+                if (user.email === 'admin@rocc.com') {
+                    showNotification('❌ Não pode remover o SUPER ADMIN!');
+                    return;
+                }
+                
+                if (!isAdmin()) {
+                    showNotification('❌ Apenas administradores podem remover usuários!');
+                    return;
+                }
+                
+                if (!confirm(`Remover usuário "${user.nome}" (${user.email})?`)) return;
+                
+                await autenticarSupabase();
+                
+                const { error } = await supabaseClient
+                    .from('usuarios')
+                    .delete()
+                    .eq('id', userId);
+                
+                if (error) {
+                    showNotification('❌ Erro ao remover usuário: ' + error.message);
+                    return;
+                }
+                
+                showNotification(`🗑️ Usuário ${user.nome} removido com sucesso!`);
+                await carregarEmpresas();
+                USERS = USERS.filter(u => u.id !== userId);
+                
+            } catch (error) {
+                console.error('❌ Erro ao remover usuário:', error);
                 showNotification('❌ Erro ao remover usuário: ' + error.message);
-                return;
             }
-            
-            showNotification(`🗑️ Usuário ${user.nome} removido`);
-            carregarEmpresas();
         }
 
         async function abrirModalUpgradePlano(empresaId) {
