@@ -838,7 +838,56 @@
             box-shadow: 0 20px 60px rgba(4, 53, 84, 0.5);
         }
         #telaCadastro .card h1 { font-size: 24px; font-weight: 700; color: #fff; text-align: center; }
-        #telaCadastro .card .sub { color: var(--cor-texto-claro); font-size: 13px; text-align: center; margin-top: 4px; margin-bottom: 24px; }
+        #telaCadastro .card .sub { color: var(--cor-texto-claro); font-size: 13px; text-align: center; margin-top: 4px; margin-bottom: 16px; }
+
+        /* Campo de código com destaque */
+        .campo-codigo {
+            background: rgba(93, 48, 165, 0.08);
+            border: 2px dashed rgba(93, 48, 165, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        .campo-codigo label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #a78bfa;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .campo-codigo label span {
+            font-size: 10px;
+            font-weight: 400;
+            color: #8ab4d6;
+        }
+        .campo-codigo input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--cor-borda);
+            background: var(--cor-fundo);
+            color: var(--cor-texto);
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-family: monospace;
+            transition: all 0.2s ease;
+            margin-top: 6px;
+        }
+        .campo-codigo input:focus {
+            border-color: var(--cor-secundaria);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(93, 48, 165, 0.3);
+        }
+        .campo-codigo .hint {
+            font-size: 10px;
+            color: #8ab4d6;
+            margin-top: 4px;
+        }
+        .campo-codigo .hint i { margin-right: 4px; }
+
         #telaCadastro .card .form-group { margin-bottom: 16px; }
         #telaCadastro .card .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--cor-texto-claro); margin-bottom: 4px; }
         #telaCadastro .card .form-group input {
@@ -1558,12 +1607,29 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- TELA DE CADASTRO -->
+    <!-- TELA DE CADASTRO COM CÓDIGO DE ATIVAÇÃO -->
     <!-- ============================================================ -->
     <div id="telaCadastro">
         <div class="card">
             <h1>🚀 Comece Agora</h1>
             <p class="sub">14 dias de teste grátis. Sem cartão de crédito.</p>
+            
+            <!-- CAMPO DE CÓDIGO DE ATIVAÇÃO -->
+            <div class="campo-codigo">
+                <label>
+                    <i class="fas fa-key"></i>
+                    Código de Ativação
+                    <span>(opcional)</span>
+                </label>
+                <input type="text" id="codigoAtivacao" 
+                       placeholder="Ex: A7F3K9M2" 
+                       style="text-transform:uppercase; letter-spacing:3px; font-weight:bold; font-family:monospace;" />
+                <div class="hint">
+                    <i class="fas fa-info-circle"></i> 
+                    Já tem um código de ativação? Insira aqui para ativar seu plano imediatamente.
+                </div>
+            </div>
+            
             <form onsubmit="event.preventDefault(); cadastrarEmpresaTrial()">
                 <div class="form-group">
                     <label>Nome da Empresa *</label>
@@ -2600,21 +2666,125 @@
             }
         }
 
+        // ============================================================
+        // FUNÇÃO DE CADASTRO COM CÓDIGO DE ATIVAÇÃO
+        // ============================================================
         async function cadastrarEmpresaTrial() {
             const empresaNome = document.getElementById('cadastroEmpresa').value.trim();
             const nome = document.getElementById('cadastroNome').value.trim();
             const email = document.getElementById('cadastroEmail').value.trim();
             const telefone = document.getElementById('cadastroTelefone').value.trim();
+            const codigo = document.getElementById('codigoAtivacao').value.trim().toUpperCase();
+            
             if (!empresaNome || !nome || !email) {
                 showNotification('❌ Preencha todos os campos obrigatórios!');
                 return;
             }
+            
             const btn = document.getElementById('btnCadastrar');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Criando conta...';
+            
             try {
+                // ========================================
+                // SE TIVER CÓDIGO, ATIVA COM ELE
+                // ========================================
+                if (codigo) {
+                    showNotification('⏳ Verificando código de ativação...');
+                    
+                    // Verificar se o código é válido
+                    const { data: codigoData, error: codigoError } = await supabaseClient
+                        .from('codigos_ativacao')
+                        .select('*, empresas(*)')
+                        .eq('codigo', codigo)
+                        .eq('usado', false)
+                        .single();
+                    
+                    if (codigoError || !codigoData) {
+                        showNotification('❌ Código inválido ou já utilizado!');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket mr-2"></i> Iniciar Teste Grátis';
+                        return;
+                    }
+                    
+                    if (new Date(codigoData.expira_em) < new Date()) {
+                        showNotification('❌ Código expirado!');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-rocket mr-2"></i> Iniciar Teste Grátis';
+                        return;
+                    }
+                    
+                    // Criar empresa com o plano do código
+                    const { data: empresa, error: empresaError } = await supabaseClient
+                        .from('empresas')
+                        .insert({
+                            nome: empresaNome,
+                            slug: empresaNome.toLowerCase().replace(/\s/g, '-') + '-' + Date.now(),
+                            plano: codigoData.plano,
+                            status: 'ativo',
+                            data_vencimento: new Date(Date.now() + codigoData.dias_validade * 24 * 60 * 60 * 1000),
+                            data_inicio_trial: null,
+                            data_fim_trial: null
+                        })
+                        .select()
+                        .single();
+                    
+                    if (empresaError) throw empresaError;
+                    
+                    // Criar usuário admin
+                    const { data: usuario, error: userError } = await supabaseClient
+                        .from('usuarios')
+                        .insert({
+                            empresa_id: empresa.id,
+                            nome: nome,
+                            email: email,
+                            senha: 'trial123',
+                            role: 'admin',
+                            ativo: true
+                        })
+                        .select()
+                        .single();
+                    
+                    if (userError) throw userError;
+                    
+                    // Marcar código como usado
+                    await supabaseClient
+                        .from('codigos_ativacao')
+                        .update({ 
+                            usado: true, 
+                            usado_em: new Date() 
+                        })
+                        .eq('id', codigoData.id);
+                    
+                    // Criar configurações padrão
+                    await criarConfiguracoesPadrao(empresa.id);
+                    
+                    // Registrar no histórico
+                    await supabaseClient
+                        .from('historico_planos')
+                        .insert({
+                            empresa_id: empresa.id,
+                            plano_antigo: null,
+                            plano_novo: codigoData.plano,
+                            motivo: 'Ativação via código no cadastro'
+                        });
+                    
+                    showNotification(`✅ Empresa criada com plano ${codigoData.plano}!`);
+                    
+                    sessionStorage.setItem('empresa_id', empresa.id);
+                    sessionStorage.setItem('empresa_plano', codigoData.plano);
+                    sessionStorage.setItem('rocc_user', JSON.stringify(usuario));
+                    
+                    setTimeout(() => window.location.reload(), 1500);
+                    return;
+                }
+                
+                // ========================================
+                // SEM CÓDIGO: CRIA TRIAL NORMAL
+                // ========================================
                 const slug = empresaNome.toLowerCase().replace(/\s/g, '-') + '-' + Date.now();
                 const resultado = await criarEmpresaTrial(empresaNome, slug, nome, email);
+                
                 if (resultado) {
                     showNotification('✅ Conta criada com sucesso!');
                     sessionStorage.setItem('empresa_id', resultado.empresa.id);
@@ -2623,6 +2793,7 @@
                     setTimeout(() => window.location.reload(), 1500);
                 }
             } catch (error) {
+                console.error('❌ Erro:', error);
                 showNotification('❌ Erro: ' + error.message);
             } finally {
                 btn.disabled = false;
@@ -3097,17 +3268,12 @@
         // ============================================================
         async function gerarCodigoAdmin(empresaId) {
             try {
-                // Se não passou empresaId, mostra lista para escolher
                 if (!empresaId) {
-                    // Recarregar lista de empresas para garantir que está atualizada
                     await carregarEmpresas();
-                    
                     if (empresas.length === 0) {
-                        // Se não tem empresas, pergunta se quer criar uma
                         if (confirm('Nenhuma empresa cadastrada. Deseja criar uma nova?')) {
                             const nomeEmpresa = prompt('Nome da nova empresa:');
                             if (!nomeEmpresa) return;
-                            
                             const { data: novaEmpresa, error: createError } = await supabaseClient
                                 .from('empresas')
                                 .insert({
@@ -3120,12 +3286,10 @@
                                 })
                                 .select()
                                 .single();
-                            
                             if (createError) {
                                 showNotification('❌ Erro ao criar empresa: ' + createError.message);
                                 return;
                             }
-                            
                             empresaId = novaEmpresa.id;
                             empresas.push(novaEmpresa);
                             showNotification(`✅ Empresa "${nomeEmpresa}" criada!`);
@@ -3133,29 +3297,21 @@
                             return;
                         }
                     } else {
-                        // Mostra lista de empresas
                         let listaEmpresas = '📋 EMPRESAS DISPONÍVEIS:\n\n';
                         empresas.forEach((e, i) => {
                             listaEmpresas += `${i+1}. ${e.nome} (${e.plano || 'trial'}) - ${e.status || 'ativo'}\n`;
                         });
                         listaEmpresas += `\n0. Criar nova empresa\n\nDigite o número da empresa:`;
-                        
                         const escolha = prompt(listaEmpresas);
-                        
-                        if (escolha === null) return; // Cancelou
-                        
+                        if (escolha === null) return;
                         const numero = parseInt(escolha);
-                        
                         if (isNaN(numero)) {
                             showNotification('❌ Digite um número válido!');
                             return;
                         }
-                        
                         if (numero === 0) {
-                            // Criar nova empresa
                             const nomeEmpresa = prompt('Nome da nova empresa:');
                             if (!nomeEmpresa) return;
-                            
                             const { data: novaEmpresa, error: createError } = await supabaseClient
                                 .from('empresas')
                                 .insert({
@@ -3168,12 +3324,10 @@
                                 })
                                 .select()
                                 .single();
-                            
                             if (createError) {
                                 showNotification('❌ Erro ao criar empresa: ' + createError.message);
                                 return;
                             }
-                            
                             empresaId = novaEmpresa.id;
                             empresas.push(novaEmpresa);
                             showNotification(`✅ Empresa "${nomeEmpresa}" criada!`);
@@ -3187,50 +3341,34 @@
                         }
                     }
                 }
-                
-                // Verificar se empresaId é válido
                 if (!empresaId) {
                     showNotification('❌ ID da empresa inválido!');
                     return;
                 }
-                
-                // Perguntar o plano
                 const planosDisponiveis = Object.keys(PLANOS).filter(p => p !== 'trial');
                 const plano = prompt(
                     '📊 Escolha o plano:\n\n' +
                     planosDisponiveis.map((p, i) => `${i+1}. ${PLANOS[p].nome} (${PLANOS[p].preco})`).join('\n') +
                     '\n\nDigite o número do plano:'
                 );
-                
                 if (!plano) return;
-                
                 const planoIndex = parseInt(plano) - 1;
                 if (isNaN(planoIndex) || planoIndex < 0 || planoIndex >= planosDisponiveis.length) {
                     showNotification('❌ Plano inválido!');
                     return;
                 }
-                
                 const planoSelecionado = planosDisponiveis[planoIndex];
-                
-                // Perguntar dias de validade
                 const dias = parseInt(prompt('📅 Dias de validade (ex: 365):', '365')) || 365;
-                
-                // Perguntar tipo
                 const tipo = prompt('🏷️ Tipo de ativação (pago/promocional/upgrade):', 'pago') || 'pago';
-                
-                // Buscar dados da empresa para confirmar
                 const { data: empresa, error: empresaError } = await supabaseClient
                     .from('empresas')
                     .select('nome, plano')
                     .eq('id', empresaId)
                     .single();
-                
                 if (empresaError) {
                     showNotification('❌ Empresa não encontrada!');
                     return;
                 }
-                
-                // Confirmar
                 if (!confirm(
                     `📋 CONFIRMAR GERAÇÃO DE CÓDIGO?\n\n` +
                     `🏢 Empresa: ${empresa.nome}\n` +
@@ -3239,12 +3377,8 @@
                     `🏷️ Tipo: ${tipo}\n\n` +
                     `Deseja prosseguir?`
                 )) return;
-                
-                // Gerar código
                 const resultado = await gerarCodigoAtivacao(empresaId, planoSelecionado, dias, tipo);
-                
                 if (resultado) {
-                    // Mostrar código de forma clara
                     alert(
                         `✅ CÓDIGO GERADO COM SUCESSO!\n\n` +
                         `🔑 Código: ${resultado.codigo}\n` +
@@ -3255,13 +3389,10 @@
                         `📋 Envie este código para o cliente.\n` +
                         `⚠️ O código expira em ${dias} dias.`
                     );
-                    
-                    // Copiar código automaticamente
                     try {
                         await navigator.clipboard.writeText(resultado.codigo);
                         showNotification('📋 Código copiado para a área de transferência!');
                     } catch (e) {
-                        // Fallback para navegadores antigos
                         const textarea = document.createElement('textarea');
                         textarea.value = resultado.codigo;
                         document.body.appendChild(textarea);
@@ -3270,8 +3401,6 @@
                         document.body.removeChild(textarea);
                         showNotification('📋 Código copiado!');
                     }
-                    
-                    // Atualizar lista de empresas
                     await carregarEmpresas();
                 }
             } catch (error) {
