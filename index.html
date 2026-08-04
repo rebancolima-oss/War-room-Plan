@@ -1390,6 +1390,142 @@
         body.role-monitor .hide-for-monitor { display: none !important; }
         body.role-monitor .kanban-card { cursor: pointer; }
         body.role-monitor .card-menu-btn { display: none !important; }
+
+        /* ============================================================
+           COMPONENTES ADICIONAIS
+           ============================================================ */
+
+        /* Responsável */
+        .responsible-badge {
+            font-size: 9px;
+            padding: 1px 8px;
+            border-radius: 10px;
+            background: rgba(93, 48, 165, 0.2);
+            color: var(--cor-secundaria-claro);
+            border: 1px solid rgba(93, 48, 165, 0.2);
+            margin-left: 4px;
+        }
+
+        /* Status pills */
+        .status-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .status-pill {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-pill.agendada { background: rgba(96, 165, 250, 0.2); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
+        .status-pill.execucao { background: rgba(255, 115, 0, 0.2); color: var(--cor-alerta); border: 1px solid rgba(255, 115, 0, 0.3); }
+        .status-pill.bloqueada { background: rgba(211, 41, 118, 0.2); color: var(--cor-destaque); border: 1px solid rgba(211, 41, 118, 0.3); }
+        .status-pill.revisao { background: rgba(93, 48, 165, 0.2); color: var(--cor-secundaria-claro); border: 1px solid rgba(93, 48, 165, 0.3); }
+        .status-pill.concluida { background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+
+        /* Store names */
+        .store-name-agendada { color: #93c5fd; }
+        .store-name-execucao { color: var(--cor-alerta); }
+        .store-name-bloqueada { color: #fca5a5; }
+        .store-name-revisao { color: var(--cor-secundaria-claro); }
+        .store-name-concluida { color: #6ee7b7; }
+
+        /* Modal edit card */
+        .edit-card-modal .modal-content { max-width: 600px; }
+        .edit-card-modal .form-group { margin-bottom: 16px; }
+        .edit-card-modal .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--cor-texto-claro);
+            margin-bottom: 4px;
+        }
+        .edit-card-modal .form-group input,
+        .edit-card-modal .form-group select,
+        .edit-card-modal .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--cor-borda);
+            background: var(--cor-fundo);
+            color: var(--cor-texto);
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .edit-card-modal .form-group input:focus,
+        .edit-card-modal .form-group select:focus,
+        .edit-card-modal .form-group textarea:focus {
+            border-color: var(--cor-secundaria);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(93, 48, 165, 0.3);
+        }
+        .edit-card-modal .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .edit-card-modal .btn-save-edit {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: var(--cor-secundaria);
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .edit-card-modal .btn-save-edit:hover {
+            background: var(--cor-secundaria-claro);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 640px) {
+            .edit-card-modal .form-row { grid-template-columns: 1fr; }
+        }
+
+        /* Color picker */
+        .color-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: var(--cor-fundo);
+            border-radius: 8px;
+            border: 1px solid var(--cor-borda);
+            margin-bottom: 8px;
+        }
+        .color-picker-item label {
+            font-size: 12px;
+            color: var(--cor-texto-claro);
+            min-width: 120px;
+        }
+        .color-picker-item input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--cor-borda);
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+            padding: 2px;
+        }
+        .color-picker-item input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-picker-item input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+        .btn-reset-colors {
+            background: rgba(211, 41, 118, 0.2);
+            color: var(--cor-destaque);
+            border: 1px solid rgba(211, 41, 118, 0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-reset-colors:hover { background: rgba(211, 41, 118, 0.35); }
     </style>
 </head>
 <body>
@@ -2122,6 +2258,74 @@
             </div>
         </div>
 
+        <!-- ============================================================ -->
+        <!-- MODAL: EDITAR CARD -->
+        <!-- ============================================================ -->
+        <div id="editCardModal" class="modal-overlay edit-card-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="text-base md:text-xl font-bold text-white"><i class="fas fa-edit text-[#f9d1b7] mr-2"></i>Editar Loja</h2>
+                    <button class="text-slate-400 hover:text-white transition p-1.5 rounded-lg hover:bg-[#1a4a6e]" onclick="fecharEditCard()"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nome da Loja *</label>
+                        <input type="text" id="editLojaNome" placeholder="Ex: Loja 1001" />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cidade *</label>
+                            <input type="text" id="editLojaCidade" placeholder="Ex: São Paulo" />
+                        </div>
+                        <div class="form-group">
+                            <label>UF *</label>
+                            <input type="text" id="editLojaUf" maxlength="2" placeholder="SP" style="text-transform:uppercase" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Regional</label>
+                        <input type="text" id="editLojaRegional" placeholder="Ex: Sudeste" />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Responsável</label>
+                            <select id="editLojaResponsavel" class="dark-select">
+                                <option value="">Selecione um responsável...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="editLojaStatus" class="dark-select">
+                                <option value="agendada">Agendada</option>
+                                <option value="execucao">Em Execução</option>
+                                <option value="bloqueada">Bloqueada</option>
+                                <option value="revisao">Revisão</option>
+                                <option value="concluida">Concluída</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data Agendada</label>
+                            <input type="date" id="editLojaData" />
+                        </div>
+                        <div class="form-group">
+                            <label>Quantidade de PDVs</label>
+                            <input type="number" id="editLojaPdvs" min="0" placeholder="0" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="editLojaDescricao" rows="3" placeholder="Adicione observações sobre a loja..."></textarea>
+                    </div>
+                    <button class="btn-save-edit" id="btnSalvarEdit" onclick="salvarEditCard()">
+                        <i class="fas fa-save mr-2"></i> Salvar Alterações
+                    </button>
+                    <input type="hidden" id="editCardId" value="" />
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- ============================================================ -->
@@ -2132,7 +2336,7 @@
         // CONFIGURAÇÃO SUPABASE
         // ============================================================
         const SUPABASE_URL = 'https://trilwlfaufklcijephhy.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_QqJQjyctt1_GCCSp_o67Fg_e8HeVKQe';
+        const SUPABASE_KEY = 'sua-chave-anon-public-aqui';
         let supabaseClient = null;
 
         function iniciarSupabase() {
@@ -2888,126 +3092,191 @@
             document.getElementById('statsInativos').textContent = stats.inativos;
         }
 
+        // ============================================================
         // FUNÇÃO CORRIGIDA - GERAR CÓDIGO ADMIN
+        // ============================================================
         async function gerarCodigoAdmin(empresaId) {
-            // Se não passou empresaId, pergunta qual usar
-            if (!empresaId) {
-                // Mostra lista de empresas para escolher
-                const empresasList = empresas.map((e, i) => `${i+1}. ${e.nome} (${e.id})`).join('\n');
-                const escolha = prompt(
-                    `📋 Escolha uma empresa:\n\n` +
-                    `${empresasList}\n\n` +
-                    `Digite o número da empresa ou deixe em branco para criar uma nova:`
+            try {
+                // Se não passou empresaId, mostra lista para escolher
+                if (!empresaId) {
+                    // Recarregar lista de empresas para garantir que está atualizada
+                    await carregarEmpresas();
+                    
+                    if (empresas.length === 0) {
+                        // Se não tem empresas, pergunta se quer criar uma
+                        if (confirm('Nenhuma empresa cadastrada. Deseja criar uma nova?')) {
+                            const nomeEmpresa = prompt('Nome da nova empresa:');
+                            if (!nomeEmpresa) return;
+                            
+                            const { data: novaEmpresa, error: createError } = await supabaseClient
+                                .from('empresas')
+                                .insert({
+                                    nome: nomeEmpresa,
+                                    slug: nomeEmpresa.toLowerCase().replace(/\s/g, '-') + '-' + Date.now(),
+                                    plano: 'trial',
+                                    status: 'ativo',
+                                    data_inicio_trial: new Date(),
+                                    data_fim_trial: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+                                })
+                                .select()
+                                .single();
+                            
+                            if (createError) {
+                                showNotification('❌ Erro ao criar empresa: ' + createError.message);
+                                return;
+                            }
+                            
+                            empresaId = novaEmpresa.id;
+                            empresas.push(novaEmpresa);
+                            showNotification(`✅ Empresa "${nomeEmpresa}" criada!`);
+                        } else {
+                            return;
+                        }
+                    } else {
+                        // Mostra lista de empresas
+                        let listaEmpresas = '📋 EMPRESAS DISPONÍVEIS:\n\n';
+                        empresas.forEach((e, i) => {
+                            listaEmpresas += `${i+1}. ${e.nome} (${e.plano || 'trial'}) - ${e.status || 'ativo'}\n`;
+                        });
+                        listaEmpresas += `\n0. Criar nova empresa\n\nDigite o número da empresa:`;
+                        
+                        const escolha = prompt(listaEmpresas);
+                        
+                        if (escolha === null) return; // Cancelou
+                        
+                        const numero = parseInt(escolha);
+                        
+                        if (isNaN(numero)) {
+                            showNotification('❌ Digite um número válido!');
+                            return;
+                        }
+                        
+                        if (numero === 0) {
+                            // Criar nova empresa
+                            const nomeEmpresa = prompt('Nome da nova empresa:');
+                            if (!nomeEmpresa) return;
+                            
+                            const { data: novaEmpresa, error: createError } = await supabaseClient
+                                .from('empresas')
+                                .insert({
+                                    nome: nomeEmpresa,
+                                    slug: nomeEmpresa.toLowerCase().replace(/\s/g, '-') + '-' + Date.now(),
+                                    plano: 'trial',
+                                    status: 'ativo',
+                                    data_inicio_trial: new Date(),
+                                    data_fim_trial: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+                                })
+                                .select()
+                                .single();
+                            
+                            if (createError) {
+                                showNotification('❌ Erro ao criar empresa: ' + createError.message);
+                                return;
+                            }
+                            
+                            empresaId = novaEmpresa.id;
+                            empresas.push(novaEmpresa);
+                            showNotification(`✅ Empresa "${nomeEmpresa}" criada!`);
+                        } else {
+                            const index = numero - 1;
+                            if (index < 0 || index >= empresas.length) {
+                                showNotification('❌ Número inválido! Escolha um número da lista.');
+                                return;
+                            }
+                            empresaId = empresas[index].id;
+                        }
+                    }
+                }
+                
+                // Verificar se empresaId é válido
+                if (!empresaId) {
+                    showNotification('❌ ID da empresa inválido!');
+                    return;
+                }
+                
+                // Perguntar o plano
+                const planosDisponiveis = Object.keys(PLANOS).filter(p => p !== 'trial');
+                const plano = prompt(
+                    '📊 Escolha o plano:\n\n' +
+                    planosDisponiveis.map((p, i) => `${i+1}. ${PLANOS[p].nome} (${PLANOS[p].preco})`).join('\n') +
+                    '\n\nDigite o número do plano:'
                 );
                 
-                if (escolha === null) return; // Cancelou
+                if (!plano) return;
                 
-                if (escolha.trim() === '') {
-                    // Criar nova empresa
-                    const nomeEmpresa = prompt('Nome da nova empresa:');
-                    if (!nomeEmpresa) return;
-                    
-                    // Criar empresa
-                    const { data: novaEmpresa, error: createError } = await supabaseClient
-                        .from('empresas')
-                        .insert({
-                            nome: nomeEmpresa,
-                            slug: nomeEmpresa.toLowerCase().replace(/\s/g, '-') + '-' + Date.now(),
-                            plano: 'trial',
-                            status: 'ativo',
-                            data_inicio_trial: new Date(),
-                            data_fim_trial: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-                        })
-                        .select()
-                        .single();
-                    
-                    if (createError) {
-                        showNotification('❌ Erro ao criar empresa: ' + createError.message);
-                        return;
-                    }
-                    
-                    empresaId = novaEmpresa.id;
-                    empresas.push(novaEmpresa);
-                    showNotification(`✅ Empresa "${nomeEmpresa}" criada!`);
-                } else {
-                    const index = parseInt(escolha) - 1;
-                    if (isNaN(index) || index < 0 || index >= empresas.length) {
-                        showNotification('❌ Número inválido');
-                        return;
-                    }
-                    empresaId = empresas[index].id;
+                const planoIndex = parseInt(plano) - 1;
+                if (isNaN(planoIndex) || planoIndex < 0 || planoIndex >= planosDisponiveis.length) {
+                    showNotification('❌ Plano inválido!');
+                    return;
                 }
-            }
-            
-            // Perguntar o plano
-            const plano = prompt('📊 Plano (startup/business/enterprise):', 'business');
-            if (!plano) return;
-            
-            if (!PLANOS[plano]) {
-                showNotification('❌ Plano inválido! Use: startup, business ou enterprise');
-                return;
-            }
-            
-            // Perguntar dias de validade
-            const dias = parseInt(prompt('📅 Dias de validade:', '365')) || 365;
-            
-            // Perguntar tipo
-            const tipo = prompt('🏷️ Tipo (pago/promocional/upgrade):', 'pago') || 'pago';
-            
-            // Buscar dados da empresa para confirmar
-            const { data: empresa, error: empresaError } = await supabaseClient
-                .from('empresas')
-                .select('nome')
-                .eq('id', empresaId)
-                .single();
-            
-            if (empresaError) {
-                showNotification('❌ Empresa não encontrada!');
-                return;
-            }
-            
-            // Confirmar
-            if (!confirm(
-                `📋 Confirmar geração de código?\n\n` +
-                `🏢 Empresa: ${empresa.nome}\n` +
-                `📊 Plano: ${PLANOS[plano].nome}\n` +
-                `📅 Validade: ${dias} dias\n` +
-                `🏷️ Tipo: ${tipo}\n\n` +
-                `Deseja prosseguir?`
-            )) return;
-            
-            // Gerar código
-            const resultado = await gerarCodigoAtivacao(empresaId, plano, dias, tipo);
-            
-            if (resultado) {
-                // Mostrar código de forma clara
-                alert(
-                    `✅ CÓDIGO GERADO COM SUCESSO!\n\n` +
-                    `🔑 Código: ${resultado.codigo}\n` +
+                
+                const planoSelecionado = planosDisponiveis[planoIndex];
+                
+                // Perguntar dias de validade
+                const dias = parseInt(prompt('📅 Dias de validade (ex: 365):', '365')) || 365;
+                
+                // Perguntar tipo
+                const tipo = prompt('🏷️ Tipo de ativação (pago/promocional/upgrade):', 'pago') || 'pago';
+                
+                // Buscar dados da empresa para confirmar
+                const { data: empresa, error: empresaError } = await supabaseClient
+                    .from('empresas')
+                    .select('nome, plano')
+                    .eq('id', empresaId)
+                    .single();
+                
+                if (empresaError) {
+                    showNotification('❌ Empresa não encontrada!');
+                    return;
+                }
+                
+                // Confirmar
+                if (!confirm(
+                    `📋 CONFIRMAR GERAÇÃO DE CÓDIGO?\n\n` +
                     `🏢 Empresa: ${empresa.nome}\n` +
-                    `📊 Plano: ${PLANOS[plano].nome}\n` +
-                    `📅 Validade: ${dias} dias\n\n` +
-                    `📋 Envie este código para o cliente.\n` +
-                    `⚠️ O código expira em ${dias} dias.`
-                );
+                    `📊 Plano: ${PLANOS[planoSelecionado].nome}\n` +
+                    `📅 Validade: ${dias} dias\n` +
+                    `🏷️ Tipo: ${tipo}\n\n` +
+                    `Deseja prosseguir?`
+                )) return;
                 
-                // Copiar código automaticamente
-                try {
-                    await navigator.clipboard.writeText(resultado.codigo);
-                    showNotification('📋 Código copiado para a área de transferência!');
-                } catch (e) {
-                    // Fallback para navegadores antigos
-                    const textarea = document.createElement('textarea');
-                    textarea.value = resultado.codigo;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    showNotification('📋 Código copiado!');
+                // Gerar código
+                const resultado = await gerarCodigoAtivacao(empresaId, planoSelecionado, dias, tipo);
+                
+                if (resultado) {
+                    // Mostrar código de forma clara
+                    alert(
+                        `✅ CÓDIGO GERADO COM SUCESSO!\n\n` +
+                        `🔑 Código: ${resultado.codigo}\n` +
+                        `🏢 Empresa: ${empresa.nome}\n` +
+                        `📊 Plano: ${PLANOS[planoSelecionado].nome}\n` +
+                        `📅 Validade: ${dias} dias\n` +
+                        `🏷️ Tipo: ${tipo}\n\n` +
+                        `📋 Envie este código para o cliente.\n` +
+                        `⚠️ O código expira em ${dias} dias.`
+                    );
+                    
+                    // Copiar código automaticamente
+                    try {
+                        await navigator.clipboard.writeText(resultado.codigo);
+                        showNotification('📋 Código copiado para a área de transferência!');
+                    } catch (e) {
+                        // Fallback para navegadores antigos
+                        const textarea = document.createElement('textarea');
+                        textarea.value = resultado.codigo;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        showNotification('📋 Código copiado!');
+                    }
+                    
+                    // Atualizar lista de empresas
+                    await carregarEmpresas();
                 }
-                
-                // Atualizar lista de empresas
-                carregarEmpresas();
+            } catch (error) {
+                console.error('❌ Erro ao gerar código:', error);
+                showNotification('❌ Erro ao gerar código: ' + error.message);
             }
         }
 
@@ -4341,6 +4610,129 @@
         }
 
         // ============================================================
+        // EDITAR CARD
+        // ============================================================
+        function abrirEditCard(cardId) {
+            const card = initialCards.find(c => c.id === cardId);
+            if (!card) {
+                showNotification('❌ Loja não encontrada!');
+                return;
+            }
+            document.getElementById('editCardId').value = card.id;
+            document.getElementById('editLojaNome').value = card.loja || '';
+            document.getElementById('editLojaCidade').value = card.cidade || '';
+            document.getElementById('editLojaUf').value = card.uf || '';
+            document.getElementById('editLojaRegional').value = card.regional || '';
+            document.getElementById('editLojaStatus').value = card.status || 'agendada';
+            document.getElementById('editLojaData').value = card.data_agendada || '';
+            document.getElementById('editLojaPdvs').value = card.pdvs || 0;
+            document.getElementById('editLojaDescricao').value = card.descricao || '';
+            
+            populateResponsavelSelects();
+            if (card.responsavel_id) {
+                document.getElementById('editLojaResponsavel').value = card.responsavel_id;
+            }
+            
+            document.getElementById('editCardModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharEditCard() {
+            document.getElementById('editCardModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        async function salvarEditCard() {
+            const cardId = document.getElementById('editCardId').value;
+            const card = initialCards.find(c => c.id === cardId);
+            if (!card) {
+                showNotification('❌ Loja não encontrada!');
+                return;
+            }
+            
+            const nome = document.getElementById('editLojaNome').value.trim();
+            const cidade = document.getElementById('editLojaCidade').value.trim();
+            const uf = document.getElementById('editLojaUf').value.trim().toUpperCase();
+            const regional = document.getElementById('editLojaRegional').value.trim();
+            const status = document.getElementById('editLojaStatus').value;
+            const data = document.getElementById('editLojaData').value;
+            const pdvs = parseInt(document.getElementById('editLojaPdvs').value) || 0;
+            const descricao = document.getElementById('editLojaDescricao').value.trim();
+            const responsavelId = document.getElementById('editLojaResponsavel').value;
+            
+            if (!nome || !cidade || !uf || uf.length !== 2) {
+                showNotification('❌ Preencha Nome, Cidade e UF!');
+                return;
+            }
+            
+            const usuario = USERS.find(u => u.id === responsavelId);
+            
+            await autenticarSupabase();
+            
+            const updateData = {
+                nome: nome,
+                cidade: cidade,
+                uf: uf,
+                regional: regional,
+                status: status,
+                data_agendada: data || null,
+                pdvs: pdvs,
+                descricao: descricao,
+                responsavel_id: responsavelId || null,
+                responsavel_nome: usuario ? usuario.nome : null
+            };
+            
+            const { error } = await supabaseClient
+                .from('lojas')
+                .update(updateData)
+                .eq('id', cardId);
+            
+            if (error) {
+                showNotification('❌ Erro ao salvar: ' + error.message);
+                return;
+            }
+            
+            card.loja = nome;
+            card.cidade = cidade;
+            card.uf = uf;
+            card.regional = regional;
+            card.status = status;
+            card.data_agendada = data || null;
+            card.data = data ? formatarDataBR(data) : 'Hoje';
+            card.pdvs = pdvs;
+            card.descricao = descricao;
+            card.responsavel = usuario ? usuario.nome : 'Não atribuído';
+            card.responsavel_id = responsavelId || null;
+            
+            renderCards();
+            fecharEditCard();
+            showNotification(`✅ ${nome} atualizada!`);
+            atualizarMetricasPainel();
+            atualizarDashboard();
+        }
+
+        function populateResponsavelSelects() {
+            const select = document.getElementById('editLojaResponsavel');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Selecione um responsável...</option>';
+            
+            const usuariosComLogin = USERS.filter(u => u.email && u.email.trim() !== '');
+            usuariosComLogin.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                const roleLabel = { admin: 'Admin', gerente: 'Gerente', tecnico: 'Técnico' } [user.role] || user.role;
+                option.textContent = `${user.nome} (${roleLabel})`;
+                select.appendChild(option);
+            });
+            
+            if (currentValue && usuariosComLogin.some(u => u.id === currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // ============================================================
         // EXCEL
         // ============================================================
         function exportToExcel() {
@@ -4551,6 +4943,10 @@
         window.completeStoreFromModal = completeStoreFromModal;
         window.updateResponsibleFromModal = updateResponsibleFromModal;
         window.deleteCard = deleteCard;
+        window.abrirEditCard = abrirEditCard;
+        window.fecharEditCard = fecharEditCard;
+        window.salvarEditCard = salvarEditCard;
+        window.populateResponsavelSelects = populateResponsavelSelects;
         window.openAddCardModal = openAddCardModal;
         window.closeAddCardModal = closeAddCardModal;
         window.confirmAddCard = confirmAddCard;
